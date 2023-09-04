@@ -36,6 +36,7 @@ public class Main {
             }
         } catch (IOException e) {
             System.out.println("IOException: " + e.getMessage());
+        }
 //        } finally {
 //            try {
 //                if (clientSocket != null) {
