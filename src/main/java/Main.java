@@ -30,18 +30,20 @@ public class Main {
                     out.println(resp);
                     System.out.println("Sent response: "+resp);
                 }
-                
+                clientSocket.close();
+                System.out.println("Client disconnected!");
+
             }
         } catch (IOException e) {
             System.out.println("IOException: " + e.getMessage());
-        } finally {
-            try {
-                if (clientSocket != null) {
-                    clientSocket.close();
-                }
-            } catch (IOException e) {
-                System.out.println("IOException: " + e.getMessage());
-            }
-        }
+//        } finally {
+//            try {
+//                if (clientSocket != null) {
+//                    clientSocket.close();
+//                }
+//            } catch (IOException e) {
+//                System.out.println("IOException: " + e.getMessage());
+//            }
+//        }
     }
 }
