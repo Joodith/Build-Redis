@@ -1,9 +1,7 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 public class Main {
     public static void main(String[] args) {
@@ -22,15 +20,15 @@ public class Main {
                 clientSocket = serverSocket.accept();
                 System.out.println("Client connected from "+clientSocket.getInetAddress().getHostAddress());
                 BufferedReader in=new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                PrintWriter out=new PrintWriter(clientSocket.getOutputStream(),true);
+//                PrintWriter out=new PrintWriter(clientSocket.getOutputStream(),true);
+                OutputStream out=clientSocket.getOutputStream();
                 String con_msg=in.readLine();
-                System.out.println(con_msg);
-//                System.out.println(con_msg!=null && con_msg.contains("PING"));
-                if(con_msg!=null){
+                String msg="PONG";
+                byte[] resp=encodeResponseInRESP(msg);
+                if(con_msg!=null && resp!=null){
                     System.out.println("Received message: "+con_msg);
-                    String resp="PONG";
-                    out.println(resp);
-                    System.out.println("Sent response: "+resp);
+                    out.write(resp);
+                    System.out.println("Sent response: "+msg);
                 }
                 clientSocket.close();
                 System.out.println("Client disconnected!");
@@ -48,5 +46,19 @@ public class Main {
 //                System.out.println("IOException: " + e.getMessage());
 //            }
 //        }
+    }
+
+    public static byte[] encodeResponseInRESP(String value){
+        int length = value.getBytes(StandardCharsets.UTF_8).length;
+        byte[] res = new byte[1 + length + 2];
+        int ind=0;
+        res[ind++]='+';
+        byte[] valueInBytes=value.getBytes(StandardCharsets.UTF_8);
+        for(byte b:valueInBytes){
+            res[ind++]=b;
+        }
+        res[ind++]='\r';
+        res[ind]='\n';
+        return res;
     }
 }
