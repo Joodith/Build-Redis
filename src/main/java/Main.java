@@ -28,7 +28,7 @@ public class Main {
 //                System.out.println(con_msg!=null && con_msg.contains("PING"));
                 if(con_msg!=null){
                     System.out.println("Received message: "+con_msg);
-                    String resp="+PONG\\r\\n";
+                    String resp="PONG";
                     out.println(resp);
                     System.out.println("Sent response: "+resp);
                 }
