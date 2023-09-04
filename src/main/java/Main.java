@@ -25,7 +25,7 @@ public class Main {
                 String con_msg=in.readLine();
                 String msg="PONG";
                 byte[] resp=encodeResponseInRESP(msg);
-                if(con_msg!=null && resp!=null){
+                if(con_msg!=null && resp.length!=0){
                     System.out.println("Received message: "+con_msg);
                     out.write(resp);
                     System.out.println("Sent response: "+msg);
