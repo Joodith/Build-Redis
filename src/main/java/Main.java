@@ -24,6 +24,8 @@ public class Main {
                 BufferedReader in=new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 PrintWriter out=new PrintWriter(clientSocket.getOutputStream(),true);
                 String con_msg=in.readLine();
+                System.out.println(con_msg);
+                System.out.println(con_msg!=null && con_msg.contains("PING"));
                 if(con_msg!=null && (con_msg.contains("PING")||con_msg.contains("Ping"))){
                     System.out.println("Received message: "+con_msg);
                     String resp="+PONG\\r\\n";
