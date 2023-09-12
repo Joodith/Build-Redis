@@ -1,46 +1,37 @@
 package com.connections.handlers;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.function.Function;
+import java.io.*;
 
-public class ProtocolHandler {
+
+public class ProtocolHandlerConcurrent {
+
 
     private static final Map<String, Function<BufferedReader, Object>> handlerMap = new HashMap<>();
 
+
     static {
-        handlerMap.put("+", ProtocolHandler::handleSimpleString);
-        handlerMap.put("-", ProtocolHandler::handleError);
-        handlerMap.put(":", ProtocolHandler::handleInteger);
-        handlerMap.put("$", ProtocolHandler::handleString);
-        handlerMap.put("*", ProtocolHandler::handleArray);
-        handlerMap.put("%", ProtocolHandler::handleMap);
-        handlerMap.put("~", ProtocolHandler::handleSet);
+        handlerMap.put("+", com.connections.handlers.ProtocolHandler::handleSimpleString);
+        handlerMap.put("-", com.connections.handlers.ProtocolHandler::handleError);
+        handlerMap.put(":", com.connections.handlers.ProtocolHandler::handleInteger);
+        handlerMap.put("$", com.connections.handlers.ProtocolHandler::handleString);
+        handlerMap.put("*", com.connections.handlers.ProtocolHandler::handleArray);
+        handlerMap.put("%", com.connections.handlers.ProtocolHandler::handleMap);
+        handlerMap.put("~", com.connections.handlers.ProtocolHandler::handleSet);
 
     }
 
     public static String readData(BufferedReader in) throws IOException {
         return in.readLine();
-//        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-//        int data;
-//        boolean enterPressed = false;
-//        while ((data = in.read()) != -1) {
-//            char bytesRead = (char) data;
-//            buffer.write(bytesRead);
-//            if ((bytesRead == '\n' || bytesRead == '\r')) {
-//                enterPressed = true;
-//                break;
-//
-//            }
-//
-//        }
-//
-//        if (enterPressed) {
-//            return buffer.toString().trim();
-//        }
-//        return "";
-
     }
 
     public static String handleSimpleString(BufferedReader in) {
@@ -100,7 +91,7 @@ public class ProtocolHandler {
             int length = Integer.parseInt(readData(in));
             List<Object> resp = new ArrayList<>();
             for (int i = 1; i <= length; i++) {
-                resp.add(ProtocolHandler.handleRequest(in));
+                resp.add(handleRequest(in));
             }
             return resp;
         } catch (IOException e) {
@@ -118,8 +109,8 @@ public class ProtocolHandler {
             int length = Integer.parseInt(readData(in));
             Map<Object, Object> resp = new HashMap<>();
             for (int i = 1; i <= length; i++) {
-                Object key = ProtocolHandler.handleRequest(in);
-                Object value = ProtocolHandler.handleRequest(in);
+                Object key = handleRequest(in);
+                Object value = handleRequest(in);
                 resp.put(key, value);
             }
             return resp;
@@ -137,7 +128,7 @@ public class ProtocolHandler {
             int length = Integer.parseInt(readData(in));
             Set<Object> resp = new HashSet<>();
             for (int i = 1; i <= length; i++) {
-                resp.add(ProtocolHandler.handleRequest(in));
+                resp.add(handleRequest(in));
             }
             return resp;
         } catch (IOException e) {
@@ -148,8 +139,27 @@ public class ProtocolHandler {
 
     }
 
+    public static BufferedReader readChannelToReader(SocketChannel clientChannel) throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        BufferedReader in = null;
+        int bytesRead = clientChannel.read(buffer);
+        if (bytesRead == -1) {
+            System.out.println("Reading is done!");
+        } else if (bytesRead > 0) {
+            buffer.flip();
+            Charset charset = StandardCharsets.UTF_8;
+            CharsetDecoder decoder = charset.newDecoder();
+            CharBuffer charBuffer = CharBuffer.allocate(buffer.remaining());
+            decoder.decode(buffer, charBuffer, true);
+            charBuffer.flip();
+            System.out.println(charBuffer);
+            in = new BufferedReader(new CharArrayReader(charBuffer.array()));
+        }
+        return in;
+
+    }
+
     public static Object handleRequest(BufferedReader inputReader) throws IOException {
-        System.out.println("Inside handle request");
         int firstByte = inputReader.read();
         if (firstByte != -1) {
 
@@ -168,99 +178,92 @@ public class ProtocolHandler {
         return null;
     }
 
+    public static Object readRequest(SocketChannel clientChannel) throws IOException {
+        System.out.println("Inside handle request");
+        BufferedReader inputReader = readChannelToReader(clientChannel);
+        return handleRequest(inputReader);
+    }
+
     public static String simpleStringsEncoding(String data) {
         return ("+" + (data) + "\r\n");
     }
+
     public static String integerEncoding(Integer data) {
         return (":" + (data) + "\r\n");
     }
+
     public static String errorEncoding(Error data) {
         return ("-" + (data.getErrorMessage()) + "\r\n");
     }
 
 
-
-    public static void writeResponse(OutputStream outputStream, Object writeData) throws IOException {
+    public static String prepareResponse(Object writeData) throws IOException {
+        final String[] toWrite = {""};
         if (writeData instanceof String) {
             System.out.println("Inside write response of String");
             System.out.println(writeData);
-            String toWrite =simpleStringsEncoding((String) writeData);
-            System.out.println(toWrite);
-            outputStream.write(toWrite.getBytes());
-            outputStream.flush();
-        }
-        else if (writeData instanceof Integer) {
+            toWrite[0] = simpleStringsEncoding((String) writeData);
+            System.out.println(toWrite[0]);
+
+        } else if (writeData instanceof Integer) {
             System.out.println("Inside write response of Integer");
             System.out.println(writeData);
-            String toWrite =integerEncoding((Integer) writeData);
-            System.out.println(toWrite);
-            outputStream.write(toWrite.getBytes());
-            outputStream.flush();
-        }
-        else if (writeData instanceof Error) {
+            toWrite[0] = integerEncoding((Integer) writeData);
+            System.out.println(toWrite[0]);
+
+        } else if (writeData instanceof Error) {
             System.out.println("Inside write of Error");
             System.out.println(writeData);
-            String toWrite = errorEncoding((Error) writeData);
-            System.out.println(toWrite);
-            outputStream.write(toWrite.getBytes());
-            outputStream.flush();
-        }
-        else if (writeData instanceof List<?>) {
+            toWrite[0] = errorEncoding((Error) writeData);
+            System.out.println(toWrite[0]);
+
+        } else if (writeData instanceof List<?>) {
             System.out.println("Inside write response of List");
             System.out.println(writeData);
-            int listSize=((List<?>) writeData).size();
-            String toWrite = "*" + (listSize) + "\r\n";
-            outputStream.write(toWrite.getBytes());
-            for(Object entry:(List<?>) writeData){
-                writeResponse(outputStream,entry);
+            int listSize = ((List<?>) writeData).size();
+            toWrite[0] = "*" + (listSize) + "\r\n";
+            for (Object entry : (List<?>) writeData) {
+                toWrite[0] = toWrite[0].concat(prepareResponse(entry));
             }
-            outputStream.flush();
-        }
-        else if (writeData instanceof Set<?>) {
+
+        } else if (writeData instanceof Set<?>) {
             System.out.println("Inside write response of set");
             System.out.println(writeData);
-            int setSize=((Set<?>) writeData).size();
-            String toWrite = "~" + (setSize) + "\r\n";
-            outputStream.write(toWrite.getBytes());
-            for(Object entry:(Set<?>) writeData){
-                writeResponse(outputStream,entry);
+            int setSize = ((Set<?>) writeData).size();
+            toWrite[0] = "~" + (setSize) + "\r\n";
+            for (Object entry : (Set<?>) writeData) {
+                toWrite[0] = toWrite[0].concat(prepareResponse(entry));
             }
-            outputStream.flush();
-        }
-        else if (writeData instanceof Map<?,?>) {
+
+        } else if (writeData instanceof Map<?, ?>) {
             System.out.println("Inside write response of Map");
             System.out.println(writeData);
-            int mapSize=((Map<?,?>) writeData).size();
-            String toWrite = "%" + (mapSize) + "\r\n";
-            outputStream.write(toWrite.getBytes());
-            ((Map<?, ?>) writeData).forEach((key,value)->{
+            int mapSize = ((Map<?, ?>) writeData).size();
+            toWrite[0] = "%" + (mapSize) + "\r\n";
+            ((Map<?, ?>) writeData).forEach((key, value) -> {
                 try {
-                    writeResponse(outputStream,key);
-                    writeResponse(outputStream,value);
+                    toWrite[0] = toWrite[0].concat(prepareResponse(key));
+                    toWrite[0] = toWrite[0].concat(prepareResponse(value));
                 } catch (IOException e) {
-                    System.out.println("Exception while writing map to stream : "+e.getMessage());
+                    System.out.println("Exception while writing map to stream : " + e.getMessage());
                     throw new RuntimeException(e);
 
                 }
             });
 
-            outputStream.flush();
+
         }
+        return toWrite[0];
 
 
     }
 
-    public static byte[] encodeResponseInRESP(String value) {
-        int length = value.getBytes(StandardCharsets.UTF_8).length;
-        byte[] res = new byte[1 + length + 2];
-        int ind = 0;
-        res[ind++] = '+';
-        byte[] valueInBytes = value.getBytes(StandardCharsets.UTF_8);
-        for (byte b : valueInBytes) {
-            res[ind++] = b;
-        }
-        res[ind++] = '\r';
-        res[ind] = '\n';
-        return res;
+    public static void writeResponse(SocketChannel clientChannel, Object writeData) throws IOException {
+        String response = prepareResponse(writeData);
+        clientChannel.write(ByteBuffer.wrap(response.getBytes()));
     }
+
+
 }
+
+

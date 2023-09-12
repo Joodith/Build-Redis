@@ -1,11 +1,8 @@
 
-import com.connections.RedisClient;
-import com.connections.RedisServer;
+import com.connections.singleThreadConcurrentExecution.RedisConcurrentClient;
+import com.connections.singleThreadConcurrentExecution.RedisConcurrentServer;
 
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 
 public class Main {
     public static void main(String[] args) throws IOException {
@@ -14,12 +11,13 @@ public class Main {
 
 
         if(args.length==0) {
-            RedisServer server = new RedisServer();
-            server.connectionHandler();
+//            RedisServer server = new RedisServer();
+            RedisConcurrentServer.connectionHandler();
         }
         else{
             if(args.length==2 && args[0].equals("redis-cli")){
-                RedisClient client=new RedisClient();
+                RedisConcurrentClient client=new RedisConcurrentClient();
+//                RedisClient client=new RedisClient();
                 client.connectToServer(args[1]);
             }
             else{
