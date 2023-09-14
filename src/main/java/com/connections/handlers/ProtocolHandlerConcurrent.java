@@ -20,13 +20,13 @@ public class ProtocolHandlerConcurrent {
 
 
     static {
-        handlerMap.put("+", com.connections.handlers.ProtocolHandler::handleSimpleString);
-        handlerMap.put("-", com.connections.handlers.ProtocolHandler::handleError);
-        handlerMap.put(":", com.connections.handlers.ProtocolHandler::handleInteger);
-        handlerMap.put("$", com.connections.handlers.ProtocolHandler::handleString);
-        handlerMap.put("*", com.connections.handlers.ProtocolHandler::handleArray);
-        handlerMap.put("%", com.connections.handlers.ProtocolHandler::handleMap);
-        handlerMap.put("~", com.connections.handlers.ProtocolHandler::handleSet);
+        handlerMap.put("+", ProtocolHandlerConcurrent::handleSimpleString);
+        handlerMap.put("-", ProtocolHandlerConcurrent::handleError);
+        handlerMap.put(":", ProtocolHandlerConcurrent::handleInteger);
+        handlerMap.put("$", ProtocolHandlerConcurrent::handleString);
+        handlerMap.put("*", ProtocolHandlerConcurrent::handleArray);
+        handlerMap.put("%", ProtocolHandlerConcurrent::handleMap);
+        handlerMap.put("~", ProtocolHandlerConcurrent::handleSet);
 
     }
 

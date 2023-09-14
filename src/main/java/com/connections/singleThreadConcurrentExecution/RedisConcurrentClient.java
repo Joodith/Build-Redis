@@ -6,6 +6,10 @@ import com.connections.handlers.ProtocolHandlerConcurrent;
 import java.io.*;
 import java.net.*;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 
 public class RedisConcurrentClient {
@@ -23,8 +27,22 @@ public class RedisConcurrentClient {
             String prompt = "redis-cli> ";
             System.out.print(greenColor + prompt + resetColor);
             String line;
+            List<String> cmdArgs,splitLargeValues;
             while ((line = userInput.readLine()) != null && !line.isEmpty()) {
-                ProtocolHandlerConcurrent.writeResponse(client, line);
+                cmdArgs=new ArrayList<>();
+                splitLargeValues = new ArrayList<>(Arrays.asList(line.split("\"")));
+                System.out.println(splitLargeValues);
+                if (!splitLargeValues.isEmpty()) {
+                    List<String> firstArg=Arrays.asList(splitLargeValues.get(0).split(" "));
+                    splitLargeValues.remove(splitLargeValues.get(0));
+                    System.out.println(splitLargeValues);
+                    cmdArgs.addAll(firstArg);
+                    if (!splitLargeValues.isEmpty()) {
+                        cmdArgs.addAll(splitLargeValues);
+//                        splitLargeValues.remove(0);
+                    }
+                    ProtocolHandlerConcurrent.writeResponse(client, cmdArgs);
+                }
                 Object serverResponse = ProtocolHandlerConcurrent.readRequest(client);
                 if (serverResponse instanceof Error) {
                     throw new CommandException("Command specified is incorrect");
