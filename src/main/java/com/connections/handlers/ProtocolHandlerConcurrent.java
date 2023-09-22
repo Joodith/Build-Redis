@@ -1,5 +1,8 @@
 package com.connections.handlers;
 
+import com.connections.handlers.timeoutHandler.LastActivityTimeMap;
+import com.connections.singleThreadConcurrentExecution.RedisConcurrentServer;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -140,6 +143,10 @@ public class ProtocolHandlerConcurrent {
     }
 
     public static BufferedReader readChannelToReader(SocketChannel clientChannel) throws IOException {
+        LastActivityTimeMap activityTimeMap=RedisConcurrentServer.getChannelLastActivityTimeMapMap().get(clientChannel);
+        if(activityTimeMap!=null) {
+            activityTimeMap.setActivityTime();
+        }
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         BufferedReader in = null;
         int bytesRead = clientChannel.read(buffer);
@@ -259,6 +266,10 @@ public class ProtocolHandlerConcurrent {
     }
 
     public static void writeResponse(SocketChannel clientChannel, Object writeData) throws IOException {
+        LastActivityTimeMap activityTimeMap=RedisConcurrentServer.getChannelLastActivityTimeMapMap().get(clientChannel);
+        if(activityTimeMap!=null) {
+            activityTimeMap.setActivityTime();
+        }
         String response = prepareResponse(writeData);
         clientChannel.write(ByteBuffer.wrap(response.getBytes()));
     }
